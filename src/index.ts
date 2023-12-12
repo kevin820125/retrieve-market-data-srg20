@@ -3,6 +3,8 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 
 import { priceHistoryHandler } from './handlers/priceHistoryHandler';
+import { volumeHistoryHandler } from './handlers/volumeHistoryHandler';
+import { liquidityHistoryHandler } from './handlers/liquidityHistoryHandler';
 
 const app: express.Application = express();
 const port: number = 3000;
@@ -24,6 +26,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/price-history/:tokenAddress', priceHistoryHandler);
+app.get('/volume-history/:contractAddress', volumeHistoryHandler);
+app.get('/liquidity-history/:contractAddress', liquidityHistoryHandler);
 
 app.listen(port, () => {
   console.log(`Server is running at port ${port}`);
