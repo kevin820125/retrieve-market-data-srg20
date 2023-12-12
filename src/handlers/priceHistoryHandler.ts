@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { format } from 'date-fns';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../utils/graphqlClient';
+import { fetchTransfers, groupTransfersByHour } from '../utils/fetchTransfers';
 
 interface Transfer {
   blockNumber: string;
@@ -19,8 +20,6 @@ interface PricePoint {
   timestamp: string;
   price: string;
 }
-
-const MAX_TRANSFERS_PER_QUERY = 100;
 
 export const priceHistoryHandler = async (req: Request, res: Response) => {
   const tokenAddress = req.params.tokenAddress.toLowerCase();
@@ -42,7 +41,7 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
     uniqueTransfers.sort((a, b) => Number(a.blockTimestamp) - Number(b.blockTimestamp));
 
     const groupedTransfers = groupTransfersByHour(uniqueTransfers);
-    const priceHistory = await processPriceHistory(groupedTransfers, tokenAddress);
+    const priceHistory = await processPriceHistory(groupedTransfers);
 
     res.json(priceHistory);
   } catch (error) {
@@ -51,54 +50,7 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
   }
 };
 
-const fetchTransfers = async (tokenAddress: string, direction: 'from' | 'to'): Promise<Transfer[]> => {
-  let transfers: Transfer[] = [];
-  let skip = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const query = gql`
-    {
-      transfers(first: ${MAX_TRANSFERS_PER_QUERY}, skip: ${skip}, orderBy: blockTimestamp, orderDirection: asc, where: { ${direction}: "${tokenAddress}" }) {
-        blockNumber
-        blockTimestamp
-      }
-    }
-    `;
-
-    const response = await graphQLClient.request<{ transfers: Transfer[] }>(query);
-    const fetchedTransfers = response.transfers.map(transfer => ({
-      blockNumber: transfer.blockNumber,
-      blockTimestamp: transfer.blockTimestamp
-    }));
-
-    transfers = transfers.concat(fetchedTransfers);
-    if (fetchedTransfers.length < MAX_TRANSFERS_PER_QUERY) {
-      hasMore = false;
-    } else {
-      skip += MAX_TRANSFERS_PER_QUERY;
-    }
-  }
-
-  return transfers;
-};
-
-const groupTransfersByHour = (transfers: Transfer[]): Map<number, Transfer[]> => {
-  const groupedTransfers = new Map<number, Transfer[]>();
-
-  transfers.forEach(transfer => {
-    const hourTimestamp = Math.floor(Number(transfer.blockTimestamp) / 3600) * 3600;
-
-    if (!groupedTransfers.has(hourTimestamp)) {
-      groupedTransfers.set(hourTimestamp, []);
-    }
-    groupedTransfers.get(hourTimestamp)?.push(transfer);
-  });
-
-  return groupedTransfers;
-};
-
-const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>, tokenAddress: string): Promise<PricePoint[]> => {
+const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>): Promise<PricePoint[]> => {
   let priceHistory: PricePoint[] = [];
 
   for (const [hourTimestamp, transfers] of groupedTransfers) {
