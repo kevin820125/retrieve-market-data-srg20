@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { format } from 'date-fns';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../utils/graphqlClient';
-import { fetchTransfers, groupTransfersByHour } from '../utils/fetchTransfers';
+import { fetchTransfers, groupTransfers } from '../utils/fetchTransfers';
 
 interface Transfer {
   blockNumber: string;
@@ -16,7 +16,6 @@ interface TickerResponse {
 }
 
 interface PricePoint {
-  blockNumber: string;
   timestamp: string;
   price: string;
 }
@@ -25,10 +24,10 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
   const tokenAddress = req.params.tokenAddress.toLowerCase();
 
   try {
-    const fromTransfersPromise = fetchTransfers(tokenAddress, 'from');
-    const toTransfersPromise = fetchTransfers(tokenAddress, 'to');
-
-    const [fromTransfers, toTransfers] = await Promise.all([fromTransfersPromise, toTransfersPromise]);
+    const [fromTransfers, toTransfers] = await Promise.all([
+      fetchTransfers(tokenAddress, 'from'),
+      fetchTransfers(tokenAddress, 'to')
+    ]);
 
     const combinedTransfers = [...fromTransfers, ...toTransfers];
 
@@ -40,8 +39,8 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
     const uniqueTransfers = Array.from(uniqueTransfersMap.values());
     uniqueTransfers.sort((a, b) => Number(a.blockTimestamp) - Number(b.blockTimestamp));
 
-    const groupedTransfers = groupTransfersByHour(uniqueTransfers);
-    const priceHistory = await processPriceHistory(groupedTransfers);
+    const hourlyGroupedTransfers = groupTransfers(uniqueTransfers, 'hour');
+    const priceHistory = await processPriceHistory(hourlyGroupedTransfers);
 
     res.json(priceHistory);
   } catch (error) {
@@ -69,7 +68,7 @@ const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>): P
       const price = response.tickers.length > 0 ? response.tickers[0].last_price : '0';
 
       const timestamp = format(new Date(hourTimestamp * 1000), 'PPpp');
-      priceHistory.push({ blockNumber: representativeBlockNumber, timestamp, price });
+      priceHistory.push({ timestamp, price });
     } catch (error) {
       console.error(`Error fetching price for block ${representativeBlockNumber}:`, error);
     }
