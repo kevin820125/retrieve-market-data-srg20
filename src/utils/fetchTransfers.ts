@@ -40,16 +40,18 @@ export const fetchTransfers = async (tokenAddress: string, direction: 'from' | '
   return transfers;
 };
 
-export const groupTransfersByHour = (transfers: Transfer[]): Map<number, Transfer[]> => {
+export const groupTransfers = (transfers: Transfer[], grouping: 'hour' | 'day'): Map<number, Transfer[]> => {
   const groupedTransfers = new Map<number, Transfer[]>();
 
-  transfers.forEach(transfer => {
-    const hourTimestamp = Math.floor(Number(transfer.blockTimestamp) / 3600) * 3600;
+  const groupingInterval = grouping === 'hour' ? 3600 : 86400;
 
-    if (!groupedTransfers.has(hourTimestamp)) {
-      groupedTransfers.set(hourTimestamp, []);
+  transfers.forEach(transfer => {
+    const roundedTimestamp = Math.floor(Number(transfer.blockTimestamp) / groupingInterval) * groupingInterval;
+
+    if (!groupedTransfers.has(roundedTimestamp)) {
+      groupedTransfers.set(roundedTimestamp, []);
     }
-    groupedTransfers.get(hourTimestamp)?.push(transfer);
+    groupedTransfers.get(roundedTimestamp)?.push(transfer);
   });
 
   return groupedTransfers;
