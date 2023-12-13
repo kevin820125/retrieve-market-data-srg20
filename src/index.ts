@@ -26,8 +26,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/price-history/:tokenAddress', priceHistoryHandler);
-app.get('/volume-history/:contractAddress', volumeHistoryHandler);
-app.get('/liquidity-history/:contractAddress', liquidityHistoryHandler);
+app.get('/volume-history/:tokenAddress', volumeHistoryHandler);
+app.get('/liquidity-history/:tokenAddress', liquidityHistoryHandler);
 
 app.listen(port, () => {
   console.log(`Server is running at port ${port}`);
