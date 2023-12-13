@@ -6,7 +6,7 @@ interface Transfer {
   blockTimestamp: string;
 }
 
-const MAX_TRANSFERS_PER_QUERY = 100;
+const MAX_TRANSFERS_PER_QUERY = 1000;
 
 export const fetchTransfers = async (tokenAddress: string, direction: 'from' | 'to'): Promise<Transfer[]> => {
   let transfers: Transfer[] = [];
@@ -16,7 +16,7 @@ export const fetchTransfers = async (tokenAddress: string, direction: 'from' | '
   while (hasMore) {
     const query = gql`
     {
-      transfers(first: ${MAX_TRANSFERS_PER_QUERY}, skip: ${skip}, orderBy: blockTimestamp, orderDirection: asc, where: { ${direction}: "${tokenAddress}" }) {
+      transfers(first: ${MAX_TRANSFERS_PER_QUERY}, skip: ${skip}, orderBy: blockTimestamp, orderDirection: asc, where: {${direction}: "${tokenAddress}"}) {
         blockNumber
         blockTimestamp
       }
@@ -41,11 +41,13 @@ export const fetchTransfers = async (tokenAddress: string, direction: 'from' | '
 };
 
 export const groupTransfers = (transfers: Transfer[], grouping: 'hour' | 'day'): Map<number, Transfer[]> => {
-  const groupedTransfers = new Map<number, Transfer[]>();
+  const uniqueTransfers = Array.from(new Map(transfers.map(t => [t.blockNumber, t])).values());
+  uniqueTransfers.sort((a, b) => Number(a.blockTimestamp) - Number(b.blockTimestamp));
 
+  const groupedTransfers = new Map<number, Transfer[]>();
   const groupingInterval = grouping === 'hour' ? 3600 : 86400;
 
-  transfers.forEach(transfer => {
+  uniqueTransfers.forEach(transfer => {
     const roundedTimestamp = Math.floor(Number(transfer.blockTimestamp) / groupingInterval) * groupingInterval;
 
     if (!groupedTransfers.has(roundedTimestamp)) {
