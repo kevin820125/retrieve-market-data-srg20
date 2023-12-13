@@ -30,7 +30,6 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
     ]);
 
     const combinedTransfers = [...fromTransfers, ...toTransfers];
-
     const hourlyGroupedTransfers = groupTransfers(combinedTransfers, 'hour');
     const priceHistory = await processPriceHistory(hourlyGroupedTransfers, tokenAddress);
 

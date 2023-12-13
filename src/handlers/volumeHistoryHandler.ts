@@ -30,7 +30,6 @@ export const volumeHistoryHandler = async (req: Request, res: Response) => {
     ]);
 
     const combinedTransfers = [...fromTransfers, ...toTransfers];
-
     const dailyGroupedTransfers = groupTransfers(combinedTransfers, 'day');
     const volumeHistory = await processVolumeHistory(dailyGroupedTransfers, tokenAddress);
 
