@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
   const baseURL = `${req.protocol}://${req.hostname}:${port}`;
-  res.send(`
+  res.status(200).send(`
     <pre>
       \n This retrieves historical market indicators for SRG20 tokens using a token entry.
       \n Use following URL handlers to get according data:

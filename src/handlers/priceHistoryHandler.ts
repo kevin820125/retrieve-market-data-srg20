@@ -33,7 +33,7 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
     const hourlyGroupedTransfers = groupTransfers(combinedTransfers, 'hour');
     const priceHistory = await processPriceHistory(hourlyGroupedTransfers, tokenAddress);
 
-    res.json(priceHistory);
+    res.status(200).json(priceHistory);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch price history.' });

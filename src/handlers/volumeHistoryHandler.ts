@@ -33,7 +33,7 @@ export const volumeHistoryHandler = async (req: Request, res: Response) => {
     const dailyGroupedTransfers = groupTransfers(combinedTransfers, 'day');
     const volumeHistory = await processVolumeHistory(dailyGroupedTransfers, tokenAddress);
 
-    res.json(volumeHistory);
+    res.status(200).json(volumeHistory);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch volume history.' });

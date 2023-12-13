@@ -33,7 +33,7 @@ export const liquidityHistoryHandler = async (req: Request, res: Response) => {
     const dailyGroupedTransfers = groupTransfers(combinedTransfers, 'day');
     const liquidityHistory = await processLiquidityHistory(dailyGroupedTransfers, tokenAddress);
 
-    res.json(liquidityHistory);
+    res.status(200).json(liquidityHistory);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch liquidity history.' });
