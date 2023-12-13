@@ -10,9 +10,9 @@ interface Transfer {
 }
 
 interface TickerResponse {
-  tickers: {
+  ticker: {
     last_price: string;
-  }[];
+  };
 }
 
 interface PricePoint {
@@ -31,16 +31,8 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
 
     const combinedTransfers = [...fromTransfers, ...toTransfers];
 
-    const uniqueTransfersMap = new Map<string, Transfer>();
-    combinedTransfers.forEach(transfer => {
-      uniqueTransfersMap.set(transfer.blockNumber, transfer);
-    });
-
-    const uniqueTransfers = Array.from(uniqueTransfersMap.values());
-    uniqueTransfers.sort((a, b) => Number(a.blockTimestamp) - Number(b.blockTimestamp));
-
-    const hourlyGroupedTransfers = groupTransfers(uniqueTransfers, 'hour');
-    const priceHistory = await processPriceHistory(hourlyGroupedTransfers);
+    const hourlyGroupedTransfers = groupTransfers(combinedTransfers, 'hour');
+    const priceHistory = await processPriceHistory(hourlyGroupedTransfers, tokenAddress);
 
     res.json(priceHistory);
   } catch (error) {
@@ -49,7 +41,7 @@ export const priceHistoryHandler = async (req: Request, res: Response) => {
   }
 };
 
-const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>): Promise<PricePoint[]> => {
+const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>, tokenAddress: string): Promise<PricePoint[]> => {
   let priceHistory: PricePoint[] = [];
 
   for (const [hourTimestamp, transfers] of groupedTransfers) {
@@ -57,7 +49,7 @@ const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>): P
 
     const query = gql`
       {
-        tickers(block: {number: ${representativeBlockNumber}}) {
+        ticker(block: {number: ${representativeBlockNumber}}, id: "${tokenAddress}") {
           last_price
         }
       }
@@ -65,7 +57,7 @@ const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>): P
 
     try {
       const response = await graphQLClient.request<TickerResponse>(query);
-      const price = response.tickers.length > 0 ? response.tickers[0].last_price : '0';
+      const price = response.ticker ? response.ticker.last_price : '0';
 
       const timestamp = format(new Date(hourTimestamp * 1000), 'PPpp');
       priceHistory.push({ timestamp, price });

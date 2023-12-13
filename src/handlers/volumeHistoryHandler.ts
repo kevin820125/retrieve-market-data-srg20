@@ -10,9 +10,9 @@ interface Transfer {
 }
 
 interface TickerResponse {
-  tickers: {
+  ticker: {
     target_volume: string;
-  }[];
+  };
 }
 
 interface VolumePoint {
@@ -31,16 +31,8 @@ export const volumeHistoryHandler = async (req: Request, res: Response) => {
 
     const combinedTransfers = [...fromTransfers, ...toTransfers];
 
-    const uniqueTransfersMap = new Map<string, Transfer>();
-    combinedTransfers.forEach(transfer => {
-      uniqueTransfersMap.set(transfer.blockNumber, transfer);
-    });
-
-    const uniqueTransfers = Array.from(uniqueTransfersMap.values());
-    uniqueTransfers.sort((a, b) => Number(a.blockTimestamp) - Number(b.blockTimestamp));
-
     const dailyGroupedTransfers = groupTransfers(combinedTransfers, 'day');
-    const volumeHistory = await processVolumeHistory(dailyGroupedTransfers);
+    const volumeHistory = await processVolumeHistory(dailyGroupedTransfers, tokenAddress);
 
     res.json(volumeHistory);
   } catch (error) {
@@ -49,7 +41,7 @@ export const volumeHistoryHandler = async (req: Request, res: Response) => {
   }
 };
 
-const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>): Promise<VolumePoint[]> => {
+const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>, tokenAddress: string): Promise<VolumePoint[]> => {
   let volumeHistory: VolumePoint[] = [];
 
   for (const [dayTimestamp, transfers] of groupedTransfers) {
@@ -65,14 +57,14 @@ const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>): 
 
     const currentVolumeQuery = gql`
       {
-        tickers(block: {number: ${currentBlockNumber}}) {
+        ticker(block: {number: ${currentBlockNumber}}, id: "${tokenAddress}") {
           target_volume
         }
       }
     `;
     const prevVolumeQuery = gql`
       {
-        tickers(block: {number: ${prevBlockNumber}}) {
+        ticker(block: {number: ${prevBlockNumber}}, id: "${tokenAddress}") {
           target_volume
         }
       }
@@ -84,10 +76,10 @@ const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>): 
         graphQLClient.request<TickerResponse>(prevVolumeQuery)
       ]);
 
-      const currentVolume = currentResponse.tickers.length > 0 ? currentResponse.tickers[0].target_volume : '0';
-      const prevVolume = prevResponse.tickers.length > 0 ? prevResponse.tickers[0].target_volume : '0';
+      const currentVolume = currentResponse.ticker ? currentResponse.ticker.target_volume : '0';
+      const prevVolume = prevResponse.ticker ? prevResponse.ticker.target_volume : '0';
 
-      const volume24hr = (parseFloat(currentVolume) - parseFloat(prevVolume)).toString();
+      const volume24hr = (Number(currentVolume) - Number(prevVolume)).toString();
       const timestamp = format(new Date(dayTimestamp * 1000), 'PPpp');
 
       volumeHistory.push({ timestamp, volume24hr });
