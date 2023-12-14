@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { format } from 'date-fns';
+import { format, utcToZonedTime } from 'date-fns-tz';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../utils/graphqlClient';
 import { fetchTransfers, groupTransfers } from '../utils/fetchTransfers';
@@ -79,7 +79,7 @@ const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>, t
       const prevVolume = prevResponse.ticker ? prevResponse.ticker.target_volume : '0';
 
       const volume24hr = (Number(currentVolume) - Number(prevVolume)).toString();
-      const timestamp = format(new Date(dayTimestamp * 1000), 'PPpp');
+      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PPpp');
 
       volumeHistory.push({ timestamp, volume24hr });
     } catch (error) {

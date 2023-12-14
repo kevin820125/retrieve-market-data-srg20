@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { format } from 'date-fns';
+import { format, utcToZonedTime } from 'date-fns-tz';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../utils/graphqlClient';
 import { fetchTransfers, groupTransfers } from '../utils/fetchTransfers';
@@ -56,9 +56,10 @@ const processLiquidityHistory = async (groupedTransfers: Map<number, Transfer[]>
 
     try {
       const response = await graphQLClient.request<TickerResponse>(query);
-      const liquidity = response.ticker ? response.ticker.liquidity_in_usd : '0';
 
-      const timestamp = format(new Date(dayTimestamp * 1000), 'PPpp');
+      const liquidity = response.ticker ? response.ticker.liquidity_in_usd : '0';
+      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PPpp');
+
       liquidityHistory.push({ timestamp, liquidity });
     } catch (error) {
       console.error(`Error fetching liquidity for block ${representativeBlockNumber}:`, error);

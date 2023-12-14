@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { format } from 'date-fns';
+import { format, utcToZonedTime } from 'date-fns-tz';
 import { gql } from 'graphql-request';
 import { graphQLClient } from '../utils/graphqlClient';
 import { fetchTransfers, groupTransfers } from '../utils/fetchTransfers';
@@ -56,9 +56,10 @@ const processPriceHistory = async (groupedTransfers: Map<number, Transfer[]>, to
 
     try {
       const response = await graphQLClient.request<TickerResponse>(query);
-      const price = response.ticker ? response.ticker.last_price : '0';
 
-      const timestamp = format(new Date(hourTimestamp * 1000), 'PPpp');
+      const price = response.ticker ? response.ticker.last_price : '0';
+      const timestamp = format(utcToZonedTime(new Date(hourTimestamp * 1000), 'UTC'), 'PPpp');
+
       priceHistory.push({ timestamp, price });
     } catch (error) {
       console.error(`Error fetching price for block ${representativeBlockNumber}:`, error);
