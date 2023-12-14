@@ -43,47 +43,29 @@ export const volumeHistoryHandler = async (req: Request, res: Response) => {
 const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>, tokenAddress: string): Promise<VolumePoint[]> => {
   let volumeHistory: VolumePoint[] = [];
 
+  let prevVolume: string = '0';
   for (const [dayTimestamp, transfers] of groupedTransfers) {
-    const currentBlockNumber = transfers[transfers.length - 1].blockNumber;
-    const prevDayTimestamp = dayTimestamp - 86400;
-    const prevTransfers = groupedTransfers.get(prevDayTimestamp);
+    const representativeBlockNumber = transfers[transfers.length - 1].blockNumber;
 
-    if (!prevTransfers) {
-      continue;
-    }
-
-    const prevBlockNumber = prevTransfers[prevTransfers.length - 1].blockNumber;
-
-    const currentVolumeQuery = gql`
+    const query = gql`
       {
-        ticker(block: {number: ${currentBlockNumber}}, id: "${tokenAddress}") {
-          target_volume
-        }
-      }
-    `;
-    const prevVolumeQuery = gql`
-      {
-        ticker(block: {number: ${prevBlockNumber}}, id: "${tokenAddress}") {
+        ticker(block: {number: ${representativeBlockNumber}}, id: "${tokenAddress}") {
           target_volume
         }
       }
     `;
 
     try {
-      const [currentResponse, prevResponse] = await Promise.all([
-        graphQLClient.request<TickerResponse>(currentVolumeQuery),
-        graphQLClient.request<TickerResponse>(prevVolumeQuery)
-      ]);
+      const response = await graphQLClient.request<TickerResponse>(query);
 
-      const currentVolume = currentResponse.ticker ? currentResponse.ticker.target_volume : '0';
-      const prevVolume = prevResponse.ticker ? prevResponse.ticker.target_volume : '0';
-
+      const currentVolume = response.ticker ? response.ticker.target_volume : '0';
       const volume24hr = (Number(currentVolume) - Number(prevVolume)).toString();
       const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PP');
 
       volumeHistory.push({ timestamp, volume24hr });
+      prevVolume = currentVolume;
     } catch (error) {
-      console.error(`Error fetching volume for block ${currentBlockNumber}:`, error);
+      console.error(`Error fetching volume for block ${representativeBlockNumber}:`, error);
     }
   }
 
