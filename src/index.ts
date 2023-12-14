@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   const protocol = req.secure ? 'https' : 'http';
   const hostname = req.hostname;
 
-  const baseURL = hostname.includes('render.com') ? `https://${hostname}` : `${protocol}://${req.hostname}:${port}`;
+  const baseURL = hostname.includes('render.com') ? `https://${hostname}` : `${protocol}://${hostname}:${port}`;
 
   res.status(200).send(`
     <pre>
