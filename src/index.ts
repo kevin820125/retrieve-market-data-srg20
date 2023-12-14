@@ -14,7 +14,9 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
   const protocol = req.secure ? 'https' : 'http';
-  const baseURL = `${protocol}://${req.hostname}:${port}`;
+  const hostname = req.hostname;
+
+  const baseURL = hostname.includes('render.com') ? `https://${hostname}` : `${protocol}://${req.hostname}:${port}`;
 
   res.status(200).send(`
     <pre>
