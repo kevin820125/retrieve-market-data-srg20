@@ -44,7 +44,7 @@ const processLiquidityHistory = async (groupedTransfers: Map<number, Transfer[]>
   let liquidityHistory: LiquidityPoint[] = [];
 
   for (const [dayTimestamp, transfers] of groupedTransfers) {
-    const representativeBlockNumber = transfers[0].blockNumber;
+    const representativeBlockNumber = transfers[transfers.length - 1].blockNumber;
 
     const query = gql`
       {
