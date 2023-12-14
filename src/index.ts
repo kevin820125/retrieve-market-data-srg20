@@ -13,7 +13,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
-  const baseURL = `${req.protocol}://${req.hostname}:${port}`;
+  const protocol = req.secure ? 'https' : 'http';
+  const baseURL = `${protocol}://${req.hostname}:${port}`;
+
   res.status(200).send(`
     <pre>
       \n This retrieves historical market indicators for SRG20 tokens using a token entry.
