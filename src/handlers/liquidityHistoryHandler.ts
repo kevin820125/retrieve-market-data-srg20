@@ -58,7 +58,7 @@ const processLiquidityHistory = async (groupedTransfers: Map<number, Transfer[]>
       const response = await graphQLClient.request<TickerResponse>(query);
 
       const liquidity = response.ticker ? response.ticker.liquidity_in_usd : '0';
-      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PPpp');
+      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PP');
 
       liquidityHistory.push({ timestamp, liquidity });
     } catch (error) {

@@ -79,7 +79,7 @@ const processVolumeHistory = async (groupedTransfers: Map<number, Transfer[]>, t
       const prevVolume = prevResponse.ticker ? prevResponse.ticker.target_volume : '0';
 
       const volume24hr = (Number(currentVolume) - Number(prevVolume)).toString();
-      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PPpp');
+      const timestamp = format(utcToZonedTime(new Date(dayTimestamp * 1000), 'UTC'), 'PP');
 
       volumeHistory.push({ timestamp, volume24hr });
     } catch (error) {
