@@ -1,6 +1,6 @@
 import express from 'express';
-import cors from 'cors'
-import bodyParser from 'body-parser'
+import cors from 'cors';
+import bodyParser from 'body-parser';
 
 import { priceHistoryHandler } from './handlers/priceHistoryHandler';
 import { volumeHistoryHandler } from './handlers/volumeHistoryHandler';
