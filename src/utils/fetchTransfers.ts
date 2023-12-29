@@ -15,12 +15,12 @@ export const fetchTransfers = async (tokenAddress: string, direction: 'from' | '
 
   while (hasMore) {
     const query = gql`
-    {
-      transfers(first: ${MAX_TRANSFERS_PER_QUERY}, skip: ${skip}, orderBy: blockTimestamp, orderDirection: asc, where: {${direction}: "${tokenAddress}"}) {
-        blockNumber
-        blockTimestamp
+      {
+        transfers(first: ${MAX_TRANSFERS_PER_QUERY}, skip: ${skip}, orderBy: blockTimestamp, orderDirection: asc, where: {${direction}: "${tokenAddress}"}) {
+          blockNumber
+          blockTimestamp
+        }
       }
-    }
     `;
 
     const response = await graphQLClient.request<{ transfers: Transfer[] }>(query);
